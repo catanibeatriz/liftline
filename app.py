@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from data.resorts import RESORTS, get_resort_by_id, get_powder_report
 import random
+import os
 
 app = Flask(__name__)
 
@@ -106,3 +107,6 @@ def api_book():
 if __name__ == "__main__":
     print("🏔️  LIFTLINE - Starting server...")
     print("🌐  Open http://127.0.0.1:5000 in your browser")
+port = int(os.environ.get("PORT", 5000))
+app.run(host="0.0.0.0", port=port, debug=False)
+
