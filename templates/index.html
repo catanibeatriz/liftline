@@ -1,0 +1,675 @@
+{% extends "base.html" %}
+{% block title %}LIFTLINE — Discover Alpine Europe{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── HERO ── */
+    .hero {
+        position: relative;
+        height: 100vh;
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        overflow: hidden;
+        background: linear-gradient(180deg, #0f2336 0%, #1c3d5a 50%, #2a5478 100%);
+    }
+    .hero-bg {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(ellipse 80% 50% at 50% 80%, rgba(110,175,214,0.25) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 40% at 20% 30%, rgba(168,204,228,0.1) 0%, transparent 60%);
+    }
+    .mountain-silhouette {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 45%;
+    }
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 0 20px;
+        margin-bottom: 120px;
+    }
+    .hero-badge {
+        display: inline-block;
+        padding: 6px 18px;
+        border: 1px solid rgba(168,204,228,0.4);
+        border-radius: 50px;
+        color: var(--powder);
+        font-size: 0.75rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+    }
+    .hero-title {
+        font-family: var(--font-display);
+        font-size: clamp(3rem, 8vw, 6.5rem);
+        font-weight: 300;
+        color: var(--white);
+        line-height: 1.05;
+        letter-spacing: -1px;
+        margin-bottom: 20px;
+    }
+    .hero-title em {
+        font-style: italic;
+        color: var(--powder);
+    }
+    .hero-sub {
+        color: rgba(255,255,255,0.65);
+        font-size: 1.05rem;
+        max-width: 520px;
+        margin: 0 auto 36px;
+        font-weight: 300;
+    }
+    .hero-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .hero-stats {
+        position: absolute;
+        bottom: 40px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        z-index: 2;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat .num {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        color: var(--white);
+        font-weight: 600;
+    }
+    .hero-stat .lbl {
+        font-size: 0.7rem;
+        color: rgba(255,255,255,0.5);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    /* ── MAP SECTION ── */
+    #map-section {
+        background: var(--white);
+        padding: 60px 0 0;
+    }
+    .map-header {
+        padding: 0 60px 40px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 20px;
+    }
+    #map {
+        width: 100%;
+        height: 580px;
+        border-top: 3px solid var(--ice);
+    }
+    .map-controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .map-ctrl-btn {
+        padding: 8px 18px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: 2px solid var(--glacier);
+        background: transparent;
+        color: var(--glacier);
+        font-family: var(--font-body);
+        letter-spacing: 0.5px;
+        transition: all var(--transition);
+    }
+    .map-ctrl-btn:hover, .map-ctrl-btn.active {
+        background: var(--glacier);
+        color: var(--white);
+    }
+
+    /* ── FILTERS ── */
+    #filters {
+        background: var(--beige);
+        padding: 60px;
+    }
+    .filters-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    .filter-item label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+    }
+    .filter-item select,
+    .filter-item input[type="range"] {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid rgba(28,61,90,0.15);
+        border-radius: var(--radius);
+        background: var(--white);
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        color: var(--charcoal);
+        appearance: none;
+        cursor: pointer;
+        transition: border-color var(--transition);
+    }
+    .filter-item select:focus { outline: none; border-color: var(--glacier); }
+    .filter-toggles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .filter-toggle {
+        padding: 8px 18px;
+        border-radius: 50px;
+        border: 1.5px solid rgba(28,61,90,0.2);
+        background: var(--white);
+        cursor: pointer;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--glacier);
+        font-family: var(--font-body);
+        transition: all var(--transition);
+    }
+    .filter-toggle.on {
+        background: var(--glacier);
+        color: var(--white);
+        border-color: var(--glacier);
+    }
+
+    /* ── RESORT GRID ── */
+    #resort-grid-section {
+        padding: 60px;
+        background: var(--snow);
+    }
+    .resort-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 28px;
+        margin-top: 30px;
+    }
+    .resort-card {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: transform var(--transition), box-shadow var(--transition);
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    .resort-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+    .resort-card-img {
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+    }
+    .resort-card-img-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(15,35,54,0.6) 0%, transparent 50%);
+    }
+    .resort-card-country {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        background: rgba(15,35,54,0.75);
+        color: var(--powder);
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        backdrop-filter: blur(6px);
+    }
+    .resort-card-snow {
+        position: absolute;
+        bottom: 14px;
+        left: 14px;
+        color: var(--white);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    .resort-card-body { padding: 20px; }
+    .resort-card-name {
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: var(--deep);
+        margin-bottom: 6px;
+    }
+    .resort-card-region { font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
+    .resort-card-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 14px;
+    }
+    .resort-card-meta span { display: flex; align-items: center; gap: 5px; }
+    .resort-card-diff { margin-bottom: 14px; }
+    .resort-card-price {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 12px;
+        border-top: 1px solid var(--ice);
+    }
+    .resort-card-price .price-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    .resort-card-price .price-value {
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        color: var(--glacier);
+        font-weight: 600;
+    }
+
+    /* ── POWDER RADAR ── */
+    #powder {
+        background: linear-gradient(135deg, var(--deep) 0%, var(--glacier) 100%);
+        padding: 70px 60px;
+        color: var(--white);
+    }
+    .powder-header { margin-bottom: 40px; }
+    .powder-header .section-label { color: var(--powder); opacity: 0.8; }
+    .powder-header .section-title { color: var(--white); }
+    .powder-header .section-title em { color: var(--powder); font-style: italic; }
+    .powder-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px;
+    }
+    .powder-card {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(168,204,228,0.2);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        backdrop-filter: blur(10px);
+        transition: all var(--transition);
+    }
+    .powder-card:hover {
+        background: rgba(255,255,255,0.14);
+        transform: translateY(-2px);
+    }
+    .powder-card-rank {
+        font-family: var(--font-display);
+        font-size: 2.5rem;
+        color: rgba(168,204,228,0.3);
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+    .powder-card-name {
+        font-family: var(--font-display);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .powder-card-country { font-size: 0.78rem; color: var(--powder); opacity: 0.7; margin-bottom: 16px; }
+    .powder-cm {
+        font-family: var(--font-display);
+        font-size: 2.8rem;
+        font-weight: 700;
+        color: var(--powder);
+        line-height: 1;
+    }
+    .powder-cm span { font-size: 1rem; opacity: 0.7; }
+    .powder-quality {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 3px 12px;
+        border-radius: 50px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(168,204,228,0.2);
+        color: var(--powder);
+        letter-spacing: 0.5px;
+    }
+    .powder-wind { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 8px; }
+
+    /* ── SKI MAP PREVIEW ── */
+    .ski-map-preview {
+        background: var(--beige);
+        padding: 60px;
+    }
+    .slope-animated {
+        stroke-dasharray: 500;
+        stroke-dashoffset: 500;
+        animation: drawLine 3s ease forwards;
+    }
+    @keyframes drawLine { to { stroke-dashoffset: 0; } }
+    @keyframes moveGondola {
+        0%   { transform: translate(0, 0); }
+        50%  { transform: translate(80px, -30px); }
+        100% { transform: translate(0, 0); }
+    }
+    .gondola-animate { animation: moveGondola 6s ease-in-out infinite; }
+
+    @media (max-width: 768px) {
+        #filters, #resort-grid-section, #powder, .ski-map-preview { padding: 40px 20px; }
+        .map-header { padding: 0 20px 20px; flex-direction: column; align-items: flex-start; }
+        .hero-stats { gap: 30px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ── -->
+<section class="hero">
+    <div class="hero-bg"></div>
+
+    <!-- Mountain SVG Silhouette -->
+    <svg class="mountain-silhouette" viewBox="0 0 1440 400" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="0,400 180,180 320,300 480,120 640,280 760,60 900,200 1060,100 1200,220 1360,140 1440,200 1440,400" fill="rgba(15,35,54,0.9)"/>
+        <polygon points="0,400 180,200 320,320 480,150 640,300 760,90 900,230 1060,130 1200,250 1360,165 1440,220 1440,400" fill="#0f2336"/>
+        <!-- Snow caps -->
+        <polygon points="760,60 720,110 800,110" fill="rgba(248,246,241,0.9)"/>
+        <polygon points="480,120 445,155 515,155" fill="rgba(248,246,241,0.8)"/>
+        <polygon points="1060,100 1028,135 1092,135" fill="rgba(248,246,241,0.85)"/>
+    </svg>
+
+    <div class="hero-content fade-up">
+        <div class="hero-badge">❄ The Alpine Concierge</div>
+        <h1 class="hero-title">Your Mountain,<br><em>Your Way.</em></h1>
+        <p class="hero-sub">Discover Europe's finest ski resorts. Check live conditions, view ski maps, and book your entire alpine adventure in one place.</p>
+        <div class="hero-ctas">
+            <a href="#map-section" class="btn btn-primary"><i class="fa fa-map-location-dot"></i> Explore the Map</a>
+            <a href="#powder" class="btn" style="background:rgba(168,204,228,0.15);color:#fff;border:1.5px solid rgba(168,204,228,0.3)"><i class="fa fa-snowflake"></i> Powder Radar</a>
+        </div>
+    </div>
+
+    <div class="hero-stats">
+        <div class="hero-stat"><div class="num">{{ resorts|length }}+</div><div class="lbl">Resorts</div></div>
+        <div class="hero-stat"><div class="num">9</div><div class="lbl">Countries</div></div>
+        <div class="hero-stat"><div class="num">5K+</div><div class="lbl">km of Slopes</div></div>
+        <div class="hero-stat"><div class="num">Live</div><div class="lbl">Conditions</div></div>
+    </div>
+</section>
+
+<!-- ── MAP SECTION ── -->
+<section id="map-section">
+    <div class="map-header">
+        <div>
+            <p class="section-label">Interactive Discovery</p>
+            <h2 class="section-title">Find Your Resort</h2>
+        </div>
+        <div class="map-controls">
+            <button class="map-ctrl-btn active" onclick="setView('europe')"><i class="fa fa-globe"></i> All Europe</button>
+            <button class="map-ctrl-btn" onclick="setView('alps')"><i class="fa fa-mountain"></i> The Alps</button>
+            <button class="map-ctrl-btn" onclick="setView('scandinavia')"><i class="fa fa-snowflake"></i> Scandinavia</button>
+            <button class="map-ctrl-btn" onclick="setView('pyrenees')"><i class="fa fa-flag"></i> Pyrenees</button>
+        </div>
+    </div>
+    <div id="map"></div>
+</section>
+
+<!-- ── FILTERS ── -->
+<section id="filters">
+    <p class="section-label">Refine Your Search</p>
+    <h2 class="section-title">Find the Perfect Match</h2>
+
+    <div class="filters-grid">
+        <div class="filter-item">
+            <label>Country</label>
+            <select id="f-country" onchange="applyFilters()">
+                <option value="">All Countries</option>
+                <option>France</option><option>Switzerland</option><option>Austria</option>
+                <option>Italy</option><option>Norway</option><option>Sweden</option>
+                <option>Andorra</option><option>Spain</option><option>Germany</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label>Difficulty Level</label>
+            <select id="f-difficulty" onchange="applyFilters()">
+                <option value="">All Levels</option>
+                <option value="beginner">Beginner Friendly</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="expert">Expert Terrain</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label>Min. Snow Depth: <span id="snow-val">0</span> cm</label>
+            <input type="range" id="f-snow" min="0" max="300" step="10" value="0"
+                   oninput="document.getElementById('snow-val').textContent=this.value; applyFilters()">
+        </div>
+        <div class="filter-item">
+            <label>Max. Day Pass: <span id="pass-val">€100</span></label>
+            <input type="range" id="f-pass" min="40" max="100" step="5" value="100"
+                   oninput="document.getElementById('pass-val').textContent='€'+this.value; applyFilters()">
+        </div>
+    </div>
+
+    <div class="filter-toggles" style="margin-top: 24px;">
+        <button class="filter-toggle" id="ft-family" onclick="toggleFilter('ft-family','family')">👨‍👩‍👧 Family Friendly</button>
+        <button class="filter-toggle" id="ft-luxury" onclick="toggleFilter('ft-luxury','luxury')">✨ Luxury Resort</button>
+        <button class="filter-toggle" id="ft-freeride" onclick="toggleFilter('ft-freeride','freeride')">🏔 Freeride / Off-Piste</button>
+    </div>
+</section>
+
+<!-- ── RESORT GRID ── -->
+<section id="resort-grid-section">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:0;">
+        <div>
+            <p class="section-label">Alpine Europe</p>
+            <h2 class="section-title">All Resorts</h2>
+        </div>
+        <div id="resort-count" style="font-size:0.85rem;color:var(--muted);"></div>
+    </div>
+    <div class="resort-grid" id="resort-grid">
+        {% for r in resorts %}
+        <a class="resort-card fade-up" href="/resort/{{ r.id }}"
+           data-country="{{ r.country }}"
+           data-snow="{{ r.weather.snow_depth }}"
+           data-pass="{{ r.ski_pass.day }}"
+           data-difficulty="{{ 'beginner' if r.difficulty.green >= 15 else 'expert' if r.difficulty.black >= 15 else 'intermediate' }}"
+           data-family="{{ 'true' if r.family_friendly else 'false' }}"
+           data-luxury="{{ 'true' if r.luxury else 'false' }}"
+           data-freeride="{{ 'true' if 'freeride' in r.tags or 'off-piste' in r.tags else 'false' }}"
+           style="animation-delay: {{ loop.index0 * 0.05 }}s">
+
+            <div class="resort-card-img" style="background-image:url('{{ r.image }}')">
+                <div class="resort-card-img-overlay"></div>
+                <div class="resort-card-country">{{ r.country }}</div>
+                <div class="resort-card-snow">❄ {{ r.weather.snow_depth }} cm</div>
+            </div>
+
+            <div class="resort-card-body">
+                <div class="resort-card-name">{{ r.name }}</div>
+                <div class="resort-card-region">{{ r.region }}</div>
+
+                <div class="resort-card-meta">
+                    <span><i class="fa fa-lift" style="color:var(--sky)"></i>🚡 {{ r.lifts }} lifts</span>
+                    <span>⛷ {{ r.slopes_km }} km</span>
+                    <span>⛰ {{ r.elevation_peak }}m</span>
+                </div>
+
+                <div class="resort-card-diff">
+                    <div class="diff-bar">
+                        <div class="diff-seg diff-green" style="flex:{{ r.difficulty.green }}"></div>
+                        <div class="diff-seg diff-blue"  style="flex:{{ r.difficulty.blue }}"></div>
+                        <div class="diff-seg diff-red"   style="flex:{{ r.difficulty.red }}"></div>
+                        <div class="diff-seg diff-black" style="flex:{{ r.difficulty.black }}"></div>
+                    </div>
+                </div>
+
+                <div class="resort-card-price">
+                    <span class="price-label">Day Pass from</span>
+                    <span class="price-value">€{{ r.ski_pass.day }}</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- ── POWDER RADAR ── -->
+<section id="powder">
+    <div class="powder-header">
+        <p class="section-label">Fresh Snow Intelligence</p>
+        <h2 class="section-title">❄ Powder <em>Radar</em></h2>
+        <p style="color:rgba(255,255,255,0.6); margin-top:10px; font-size:0.95rem;">Last 24 hours of snowfall — sorted by best conditions right now</p>
+    </div>
+    <div class="powder-grid" id="powder-grid">
+        <!-- Loaded by JS -->
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // ── Map Initialization ──
+    const map = L.map('map', { zoomControl: true, scrollWheelZoom: true });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap © CartoDB',
+        maxZoom: 18
+    }).addTo(map);
+
+    // Custom ski icon
+    function skiIcon(color = '#1c3d5a') {
+        return L.divIcon({
+            className: '',
+            html: `<div style="
+                background:${color};
+                color:white;
+                width:36px; height:36px;
+                border-radius:50% 50% 50% 0;
+                transform:rotate(-45deg);
+                border:2px solid white;
+                box-shadow:0 2px 8px rgba(0,0,0,0.3);
+                display:flex; align-items:center; justify-content:center;
+            "><div style="transform:rotate(45deg); font-size:16px;">⛷</div></div>`,
+            iconSize: [36, 36],
+            iconAnchor: [18, 36],
+            popupAnchor: [0, -38]
+        });
+    }
+
+    // Fetch and render all resorts on map
+    fetch('/api/resorts')
+        .then(r => r.json())
+        .then(resorts => {
+            resorts.forEach(resort => {
+                const color = resort.luxury ? '#c9a84c' : '#1c3d5a';
+                const marker = L.marker([resort.lat, resort.lng], { icon: skiIcon(color) });
+
+                const popup = `
+                    <div style="font-family:'DM Sans',sans-serif; min-width:200px;">
+                        <div style="font-weight:700; font-size:1rem; color:#0f2336; margin-bottom:4px;">${resort.name}</div>
+                        <div style="font-size:0.8rem; color:#7a8a96; margin-bottom:10px;">${resort.country} · ${resort.region}</div>
+                        <div style="display:flex; gap:12px; font-size:0.82rem; margin-bottom:10px;">
+                            <span>❄ ${resort.weather.snow_depth}cm</span>
+                            <span>🌡 ${resort.weather.temp}°C</span>
+                            <span>💶 €${resort.ski_pass.day}/day</span>
+                        </div>
+                        <a href="/resort/${resort.id}" style="
+                            display:inline-block;
+                            background:#1c3d5a;
+                            color:white;
+                            padding:7px 18px;
+                            border-radius:50px;
+                            text-decoration:none;
+                            font-size:0.8rem;
+                            font-weight:600;
+                        ">View Resort →</a>
+                    </div>`;
+
+                marker.bindPopup(popup).addTo(map);
+            });
+        });
+
+    // Map view presets
+    function setView(zone) {
+        document.querySelectorAll('.map-ctrl-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        const views = {
+            europe:      [50, 10, 4],
+            alps:        [46.5, 8.5, 7],
+            scandinavia: [63, 12, 5],
+            pyrenees:    [42.7, 1.0, 8],
+        };
+        const [lat, lng, zoom] = views[zone];
+        map.setView([lat, lng], zoom);
+    }
+
+    // Set initial view
+    map.setView([46.5, 9, 5]);
+
+    // ── Filters Logic ──
+    const activeToggles = {};
+
+    function toggleFilter(btnId, key) {
+        const btn = document.getElementById(btnId);
+        activeToggles[key] = !activeToggles[key];
+        btn.classList.toggle('on', activeToggles[key]);
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const country    = document.getElementById('f-country').value;
+        const difficulty = document.getElementById('f-difficulty').value;
+        const minSnow    = parseInt(document.getElementById('f-snow').value) || 0;
+        const maxPass    = parseInt(document.getElementById('f-pass').value) || 100;
+
+        const cards = document.querySelectorAll('.resort-card');
+        let visible = 0;
+
+        cards.forEach(card => {
+            let show = true;
+            if (country && card.dataset.country !== country) show = false;
+            if (difficulty && card.dataset.difficulty !== difficulty) show = false;
+            if (parseInt(card.dataset.snow) < minSnow) show = false;
+            if (parseInt(card.dataset.pass) > maxPass) show = false;
+            if (activeToggles.family && card.dataset.family !== 'true') show = false;
+            if (activeToggles.luxury && card.dataset.luxury !== 'true') show = false;
+            if (activeToggles.freeride && card.dataset.freeride !== 'true') show = false;
+
+            card.style.display = show ? 'block' : 'none';
+            if (show) visible++;
+        });
+
+        document.getElementById('resort-count').textContent = `${visible} resort${visible !== 1 ? 's' : ''} found`;
+        document.getElementById('resort-grid-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Initialize count
+    document.getElementById('resort-count').textContent = `{{ resorts|length }} resorts`;
+
+    // ── Powder Radar ──
+    fetch('/api/powder')
+        .then(r => r.json())
+        .then(data => {
+            const grid = document.getElementById('powder-grid');
+            grid.innerHTML = data.map((p, i) => `
+                <div class="powder-card">
+                    <div class="powder-card-rank">${String(i+1).padStart(2,'0')}</div>
+                    <div class="powder-card-name">${p.name}</div>
+                    <div class="powder-card-country">${p.country}</div>
+                    <div class="powder-cm">${p.snowfall_24h} <span>cm / 24h</span></div>
+                    <div class="powder-quality">${p.powder_quality}</div>
+                    <div class="powder-wind">🌬 Wind: ${p.wind}</div>
+                    <a href="/resort/${p.resort_id}" style="
+                        display:inline-block; margin-top:14px;
+                        color:var(--powder); font-size:0.82rem;
+                        text-decoration:none; font-weight:600;
+                    ">Check Conditions →</a>
+                </div>
+            `).join('');
+        });
+</script>
+{% endblock %}

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LIFTLINE{% endblock %}</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+    <style>
+        /* ==============================
+           LIFTLINE — CSS Design System
+           ============================== */
+        :root {
+            --glacier:    #1c3d5a;
+            --deep:       #0f2336;
+            --powder:     #a8cce4;
+            --ice:        #ddeef7;
+            --sky:        #6aafd6;
+            --beige:      #f0ead8;
+            --warm:       #e8ddc8;
+            --snow:       #f8f6f1;
+            --white:      #ffffff;
+            --charcoal:   #2c2c2c;
+            --muted:      #7a8a96;
+            --gold:       #c9a84c;
+            --danger:     #c0392b;
+            --success:    #27ae60;
+
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body:    'DM Sans', -apple-system, sans-serif;
+
+            --radius:  12px;
+            --radius-lg: 20px;
+            --shadow:  0 4px 24px rgba(15,35,54,0.12);
+            --shadow-lg: 0 12px 48px rgba(15,35,54,0.18);
+            --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--snow);
+            color: var(--charcoal);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ── NAVIGATION ── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            height: 70px;
+            background: rgba(15,35,54,0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(168,204,228,0.15);
+        }
+
+        .nav-logo {
+            font-family: var(--font-display);
+            font-size: 1.7rem;
+            font-weight: 600;
+            color: var(--white);
+            text-decoration: none;
+            letter-spacing: 3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-logo span { color: var(--powder); }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+        }
+        .nav-links a {
+            color: rgba(255,255,255,0.75);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            transition: color var(--transition);
+        }
+        .nav-links a:hover { color: var(--powder); }
+
+        .nav-btn {
+            background: var(--powder);
+            color: var(--deep) !important;
+            padding: 8px 22px;
+            border-radius: 50px;
+            font-weight: 600 !important;
+        }
+        .nav-btn:hover { background: var(--white) !important; color: var(--deep) !important; }
+
+        /* ── CONTENT WRAPPER ── */
+        .page-wrap {
+            padding-top: 70px;
+            min-height: 100vh;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all var(--transition);
+        }
+        .btn-primary {
+            background: var(--glacier);
+            color: var(--white);
+        }
+        .btn-primary:hover { background: var(--deep); transform: translateY(-1px); box-shadow: var(--shadow); }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--glacier);
+            border: 2px solid var(--glacier);
+        }
+        .btn-secondary:hover { background: var(--glacier); color: var(--white); }
+
+        .btn-gold {
+            background: var(--gold);
+            color: var(--white);
+        }
+        .btn-gold:hover { background: #b8943e; transform: translateY(-1px); }
+
+        .btn-ice {
+            background: var(--ice);
+            color: var(--glacier);
+        }
+        .btn-ice:hover { background: var(--powder); }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+
+        /* ── TAGS ── */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: var(--ice);
+            color: var(--glacier);
+        }
+        .tag-gold { background: rgba(201,168,76,0.15); color: var(--gold); }
+        .tag-green { background: rgba(39,174,96,0.12); color: var(--success); }
+
+        /* ── DIFFICULTY BARS ── */
+        .diff-bar { display: flex; gap: 4px; align-items: center; }
+        .diff-seg {
+            height: 8px;
+            border-radius: 4px;
+            flex: 1;
+        }
+        .diff-green { background: #2ecc71; }
+        .diff-blue  { background: #3498db; }
+        .diff-red   { background: #e74c3c; }
+        .diff-black { background: #2c2c2c; }
+
+        /* ── WEATHER WIDGET ── */
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 12px;
+        }
+        .weather-item {
+            background: linear-gradient(135deg, var(--glacier), var(--deep));
+            color: var(--white);
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+        }
+        .weather-item .w-icon { font-size: 1.6rem; margin-bottom: 6px; }
+        .weather-item .w-value { font-size: 1.3rem; font-weight: 700; font-family: var(--font-display); }
+        .weather-item .w-label { font-size: 0.72rem; color: var(--powder); letter-spacing: 0.5px; margin-top: 3px; }
+
+        /* ── SNOW DEPTH BAR ── */
+        .snow-bar-wrap { background: var(--ice); border-radius: 8px; height: 10px; overflow: hidden; margin-top: 6px; }
+        .snow-bar { background: linear-gradient(90deg, var(--sky), var(--powder)); height: 100%; border-radius: 8px; transition: width 1s ease; }
+
+        /* ── SECTION HEADERS ── */
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--deep);
+            line-height: 1.2;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--deep);
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            padding: 40px;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        footer a { color: var(--powder); text-decoration: none; }
+        footer .footer-logo {
+            font-family: var(--font-display);
+            font-size: 1.6rem;
+            color: var(--white);
+            letter-spacing: 4px;
+            margin-bottom: 16px;
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes snowfall {
+            0%   { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+            10%  { opacity: 0.8; }
+            90%  { opacity: 0.6; }
+            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        }
+        .fade-up { animation: fadeUp 0.6s ease both; }
+        .fade-up-delay-1 { animation-delay: 0.1s; }
+        .fade-up-delay-2 { animation-delay: 0.2s; }
+        .fade-up-delay-3 { animation-delay: 0.3s; }
+
+        /* ── SNOWFLAKES ── */
+        .snowflakes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+        .snowflake {
+            position: absolute;
+            top: -20px;
+            color: var(--white);
+            font-size: 1em;
+            opacity: 0;
+            animation: snowfall linear infinite;
+        }
+
+        /* ── STAR RATING ── */
+        .stars { color: var(--gold); letter-spacing: -2px; }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--glacier);
+            color: var(--white);
+            padding: 14px 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--snow); }
+        ::-webkit-scrollbar-thumb { background: var(--powder); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--sky); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            nav { padding: 0 20px; }
+            .nav-links { display: none; }
+            .section-title { font-size: 1.7rem; }
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- Snowflakes -->
+<div class="snowflakes" id="snowflakes"></div>
+
+<!-- Navigation -->
+<nav>
+    <a href="/" class="nav-logo">❄ LIFTLINE</a>
+    <ul class="nav-links">
+        <li><a href="/">Discover</a></li>
+        <li><a href="/compare">Compare</a></li>
+        <li><a href="/#powder">Powder Radar</a></li>
+        <li><a href="/#filters">Filters</a></li>
+        <li><a href="#" class="nav-btn">Plan Trip</a></li>
+    </ul>
+</nav>
+
+<div class="page-wrap">
+    {% block content %}{% endblock %}
+</div>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<!-- Footer -->
+<footer>
+    <div class="footer-logo">LIFTLINE</div>
+    <p>Your luxury alpine concierge — discover, compare & book ski resorts across Europe</p>
+    <p style="margin-top: 10px;">
+        <a href="#">France</a> · <a href="#">Switzerland</a> · <a href="#">Austria</a> ·
+        <a href="#">Italy</a> · <a href="#">Norway</a> · <a href="#">Sweden</a> ·
+        <a href="#">Andorra</a> · <a href="#">Spain</a> · <a href="#">Germany</a>
+    </p>
+    <p style="margin-top: 20px; font-size: 0.75rem; opacity: 0.5;">© 2025 LIFTLINE · Built for skiers, by skiers</p>
+</footer>
+
+<script>
+    // ── Snowflakes animation ──
+    const sf = document.getElementById('snowflakes');
+    const flakes = ['❄', '❅', '❆', '·', '•'];
+    for (let i = 0; i < 20; i++) {
+        const el = document.createElement('div');
+        el.className = 'snowflake';
+        el.textContent = flakes[Math.floor(Math.random() * flakes.length)];
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.fontSize = (0.5 + Math.random() * 1.2) + 'em';
+        el.style.animationDuration = (8 + Math.random() * 15) + 's';
+        el.style.animationDelay = (Math.random() * 15) + 's';
+        el.style.opacity = (0.2 + Math.random() * 0.6);
+        sf.appendChild(el);
+    }
+
+    // ── Toast notification ──
+    function showToast(msg, duration = 3000) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    // ── Stars helper ──
+    function renderStars(rating) {
+        const full = Math.floor(rating);
+        const half = rating % 1 >= 0.5;
+        let s = '';
+        for (let i = 0; i < full; i++) s += '★';
+        if (half) s += '½';
+        for (let i = Math.ceil(rating); i < 5; i++) s += '☆';
+        return `<span class="stars">${s}</span>`;
+    }
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

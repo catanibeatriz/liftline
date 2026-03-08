@@ -1,0 +1,773 @@
+{% extends "base.html" %}
+{% block title %}{{ resort.name }} — LIFTLINE{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── RESORT HERO ── */
+    .resort-hero {
+        height: 70vh;
+        min-height: 500px;
+        position: relative;
+        background: url('{{ resort.image }}') center/cover no-repeat;
+        display: flex;
+        align-items: flex-end;
+        padding: 60px;
+    }
+    .resort-hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(10,25,40,0.9) 0%, rgba(10,25,40,0.3) 50%, transparent 80%);
+    }
+    .resort-hero-content {
+        position: relative;
+        z-index: 1;
+        color: var(--white);
+        max-width: 700px;
+    }
+    .resort-hero-breadcrumb {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.6);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+    }
+    .resort-hero-breadcrumb a { color: var(--powder); text-decoration: none; }
+    .resort-hero-name {
+        font-family: var(--font-display);
+        font-size: clamp(2.5rem, 5vw, 4.5rem);
+        font-weight: 400;
+        line-height: 1.1;
+        margin-bottom: 14px;
+    }
+    .resort-hero-meta { display: flex; gap: 20px; flex-wrap: wrap; }
+    .resort-hero-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .resort-main {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 40px;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 50px 60px;
+    }
+
+    /* ── PANELS ── */
+    .panel {
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: var(--shadow);
+    }
+    .panel-title {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--deep);
+        margin-bottom: 6px;
+    }
+    .panel-subtitle {
+        font-size: 0.78rem;
+        color: var(--muted);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    .stat-box {
+        background: var(--white);
+        border-radius: var(--radius);
+        padding: 20px;
+        text-align: center;
+        box-shadow: var(--shadow);
+    }
+    .stat-box .val {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--glacier);
+        line-height: 1;
+    }
+    .stat-box .unit { font-size: 0.9rem; color: var(--muted); }
+    .stat-box .lbl { font-size: 0.72rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; }
+
+    /* ── DIFFICULTY ── */
+    .diff-legend {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 16px;
+    }
+    .diff-item {
+        border-radius: var(--radius);
+        padding: 14px;
+        text-align: center;
+        color: white;
+        font-weight: 700;
+    }
+    .diff-item .pct { font-size: 1.6rem; font-family: var(--font-display); }
+    .diff-item .lbl { font-size: 0.7rem; letter-spacing: 1px; margin-top: 2px; opacity: 0.85; }
+
+    /* ── WEATHER ── */
+    .temp-big {
+        font-family: var(--font-display);
+        font-size: 4rem;
+        font-weight: 300;
+        color: var(--glacier);
+        line-height: 1;
+    }
+
+    /* ── SKI MAP ── */
+    .ski-map-wrap {
+        background: linear-gradient(160deg, #d4e8f4 0%, #b8d8ee 40%, #c8e4f0 70%, #e8f4f8 100%);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        position: relative;
+        min-height: 440px;
+    }
+    .ski-map-svg { width: 100%; height: auto; }
+    .slope-line {
+        stroke-linecap: round;
+        fill: none;
+        opacity: 0.85;
+        stroke-width: 3;
+        cursor: pointer;
+        transition: stroke-width 0.2s, opacity 0.2s;
+    }
+    .slope-line:hover { stroke-width: 6; opacity: 1; }
+    .slope-green { stroke: #27ae60; }
+    .slope-blue  { stroke: #2980b9; }
+    .slope-red   { stroke: #c0392b; }
+    .slope-black { stroke: #1a1a1a; }
+    .lift-cable  { stroke: #7f8c8d; stroke-width: 1.5; stroke-dasharray: 5,3; }
+    .lift-cabin  { fill: var(--gold); }
+
+    @keyframes moveCabin {
+        0%   { transform: translate(0px, 0px); }
+        100% { transform: translate(60px, -30px); }
+    }
+    @keyframes moveCabin2 {
+        0%   { transform: translate(60px, -30px); }
+        100% { transform: translate(0px, 0px); }
+    }
+    .cabin-a { animation: moveCabin 4s linear infinite alternate; }
+    .cabin-b { animation: moveCabin2 4s linear infinite alternate; }
+
+    /* ── HOTELS ── */
+    .hotel-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--ice);
+        gap: 12px;
+    }
+    .hotel-card:last-child { border-bottom: none; }
+    .hotel-name { font-weight: 600; font-size: 0.95rem; color: var(--deep); }
+    .hotel-meta { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+    .hotel-price {
+        text-align: right;
+        white-space: nowrap;
+    }
+    .hotel-price .amt {
+        font-family: var(--font-display);
+        font-size: 1.3rem;
+        color: var(--glacier);
+        font-weight: 600;
+    }
+    .hotel-price .night { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── SKI PASS CARDS ── */
+    .pass-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .pass-card {
+        border: 2px solid var(--ice);
+        border-radius: var(--radius);
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all var(--transition);
+        position: relative;
+    }
+    .pass-card:hover, .pass-card.selected {
+        border-color: var(--glacier);
+        background: var(--ice);
+    }
+    .pass-card .pass-type { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .pass-card .pass-price { font-family: var(--font-display); font-size: 2rem; color: var(--glacier); font-weight: 600; line-height: 1; }
+    .pass-card .pass-info { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+    .pass-card .pass-badge {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--gold);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 50px;
+        letter-spacing: 1px;
+        white-space: nowrap;
+    }
+
+    /* ── EQUIPMENT RENTAL ── */
+    .equip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .equip-item {
+        border: 1.5px solid var(--ice);
+        border-radius: var(--radius);
+        padding: 16px;
+        cursor: pointer;
+        transition: all var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .equip-item:hover { border-color: var(--glacier); background: var(--ice); }
+    .equip-item.selected { border-color: var(--glacier); background: var(--ice); }
+    .equip-icon { font-size: 1.6rem; }
+    .equip-name { font-weight: 600; font-size: 0.9rem; color: var(--deep); }
+    .equip-price { font-size: 0.78rem; color: var(--muted); }
+
+    /* ── COMPARE BTN ── */
+    .compare-banner {
+        background: var(--beige);
+        border: 1.5px dashed rgba(28,61,90,0.2);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 0.85rem;
+        color: var(--muted);
+    }
+
+    /* ── SIDEBAR STICKY ── */
+    .sidebar-sticky { position: sticky; top: 90px; }
+
+    /* ── WEBCAM ── */
+    .webcam-placeholder {
+        background: linear-gradient(135deg, var(--glacier), var(--deep));
+        border-radius: var(--radius);
+        height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-align: center;
+        gap: 12px;
+    }
+    .webcam-live-dot {
+        width: 10px; height: 10px;
+        background: #e74c3c;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse 1.2s ease infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.4); opacity: 0.7; }
+    }
+
+    @media (max-width: 900px) {
+        .resort-main { grid-template-columns: 1fr; padding: 30px 20px; }
+        .stats-row { grid-template-columns: repeat(2, 1fr); }
+        .diff-legend { grid-template-columns: repeat(2, 1fr); }
+        .resort-hero { padding: 30px 20px; }
+        .pass-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── RESORT HERO ── -->
+<section class="resort-hero">
+    <div class="resort-hero-overlay"></div>
+    <div class="resort-hero-content fade-up">
+        <div class="resort-hero-breadcrumb">
+            <a href="/">← Back to Map</a> &nbsp;/&nbsp; {{ resort.country }} &nbsp;/&nbsp; {{ resort.name }}
+        </div>
+        <h1 class="resort-hero-name">{{ resort.name }}</h1>
+        <div class="resort-hero-meta">
+            <div class="resort-hero-badge">📍 {{ resort.region }}</div>
+            <div class="resort-hero-badge">❄ {{ resort.weather.snow_depth }} cm snow</div>
+            <div class="resort-hero-badge">🌡 {{ resort.weather.temp }}°C</div>
+            <div class="resort-hero-badge">⛰ {{ resort.elevation_peak }}m peak</div>
+        </div>
+    </div>
+</section>
+
+<!-- ── STATS ROW ── -->
+<div style="max-width:1400px; margin:0 auto; padding: 40px 60px 0;">
+    <div class="stats-row">
+        <div class="stat-box">
+            <div class="val">{{ resort.lifts }}</div>
+            <div class="unit"></div>
+            <div class="lbl">Ski Lifts</div>
+        </div>
+        <div class="stat-box">
+            <div class="val">{{ resort.slopes_km }}</div>
+            <div class="unit">km</div>
+            <div class="lbl">Slopes</div>
+        </div>
+        <div class="stat-box">
+            <div class="val">{{ resort.elevation_peak - resort.elevation_base }}</div>
+            <div class="unit">m</div>
+            <div class="lbl">Vertical Drop</div>
+        </div>
+        <div class="stat-box">
+            <div class="val">{{ resort.weather.snow_depth }}</div>
+            <div class="unit">cm</div>
+            <div class="lbl">Snow Depth</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="resort-main">
+
+    <!-- LEFT COLUMN -->
+    <div>
+
+        <!-- About -->
+        <div class="panel">
+            <div class="panel-subtitle">About the Resort</div>
+            <div class="panel-title" style="margin-bottom:14px;">{{ resort.name }}</div>
+            <p style="color:var(--muted); line-height:1.8; font-size:0.95rem;">{{ resort.description }}</p>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;">
+                {% for tag in resort.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+                {% if resort.luxury %}<span class="tag tag-gold">✨ Luxury</span>{% endif %}
+                {% if resort.family_friendly %}<span class="tag tag-green">👨‍👩‍👧 Family</span>{% endif %}
+            </div>
+
+            <div style="margin-top:20px;">
+                <a href="{{ resort.official_url }}" target="_blank" class="btn btn-secondary" style="font-size:0.85rem;">
+                    <i class="fa fa-external-link"></i> Official Website
+                </a>
+            </div>
+        </div>
+
+        <!-- Weather -->
+        <div class="panel">
+            <div class="panel-subtitle">Live Conditions</div>
+            <div class="panel-title">Mountain Weather</div>
+            <div style="display:flex; align-items:center; gap:20px; margin: 16px 0;">
+                <div class="temp-big">{{ resort.weather.temp }}°</div>
+                <div>
+                    <div style="font-size:0.9rem; color:var(--muted);">Temperature on slope</div>
+                    <div style="font-size:0.85rem; margin-top:4px;">Visibility: <strong>{{ resort.weather.visibility }} km</strong></div>
+                </div>
+            </div>
+            <div class="weather-grid">
+                <div class="weather-item">
+                    <div class="w-icon">❄</div>
+                    <div class="w-value">{{ resort.weather.snow_depth }}cm</div>
+                    <div class="w-label">Snow Depth</div>
+                </div>
+                <div class="weather-item">
+                    <div class="w-icon">🌨</div>
+                    <div class="w-value">{{ resort.weather.forecast_snow }}cm</div>
+                    <div class="w-label">Forecast</div>
+                </div>
+                <div class="weather-item">
+                    <div class="w-icon">💨</div>
+                    <div class="w-value">{{ resort.weather.wind }}km/h</div>
+                    <div class="w-label">Wind Speed</div>
+                </div>
+                <div class="weather-item">
+                    <div class="w-icon">👁</div>
+                    <div class="w-value">{{ resort.weather.visibility }}km</div>
+                    <div class="w-label">Visibility</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Difficulty -->
+        <div class="panel">
+            <div class="panel-subtitle">Terrain Profile</div>
+            <div class="panel-title">Slope Difficulty</div>
+            <div class="diff-bar" style="height:14px; border-radius:7px; overflow:hidden; margin: 16px 0;">
+                <div style="flex:{{ resort.difficulty.green }}; background:#27ae60;"></div>
+                <div style="flex:{{ resort.difficulty.blue }};  background:#2980b9;"></div>
+                <div style="flex:{{ resort.difficulty.red }};   background:#c0392b;"></div>
+                <div style="flex:{{ resort.difficulty.black }}; background:#1a1a1a;"></div>
+            </div>
+            <div class="diff-legend">
+                <div class="diff-item" style="background:#27ae60;">
+                    <div class="pct">{{ resort.difficulty.green }}%</div>
+                    <div class="lbl">Green · Easy</div>
+                </div>
+                <div class="diff-item" style="background:#2980b9;">
+                    <div class="pct">{{ resort.difficulty.blue }}%</div>
+                    <div class="lbl">Blue · Intermediate</div>
+                </div>
+                <div class="diff-item" style="background:#c0392b;">
+                    <div class="pct">{{ resort.difficulty.red }}%</div>
+                    <div class="lbl">Red · Advanced</div>
+                </div>
+                <div class="diff-item" style="background:#1a1a1a;">
+                    <div class="pct">{{ resort.difficulty.black }}%</div>
+                    <div class="lbl">Black · Expert</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ski Map -->
+        <div class="panel">
+            <div class="panel-subtitle">Signature Feature</div>
+            <div class="panel-title" style="margin-bottom:16px;">🗺 Retro Ski Map</div>
+            <div class="ski-map-wrap">
+                <svg class="ski-map-svg" viewBox="0 0 700 450" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Sky gradient -->
+                    <defs>
+                        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#afd6f0"/>
+                            <stop offset="100%" stop-color="#d0eaf7"/>
+                        </linearGradient>
+                        <linearGradient id="snowGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#eef6fb"/>
+                            <stop offset="100%" stop-color="#c8dfe8"/>
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+
+                    <!-- Background -->
+                    <rect width="700" height="450" fill="url(#skyGrad)"/>
+
+                    <!-- Mountain shapes (retro poster style) -->
+                    <polygon points="0,450 120,180 200,280 300,100 400,230 500,80 600,200 700,130 700,450" fill="#2a5478" opacity="0.25"/>
+                    <polygon points="0,450 130,210 220,310 320,130 420,260 510,110 610,220 700,160 700,450" fill="#1c3d5a" opacity="0.15"/>
+
+                    <!-- Snow on mountains -->
+                    <polygon points="300,100 260,140 340,140" fill="white" opacity="0.9"/>
+                    <polygon points="500,80 465,115 535,115" fill="white" opacity="0.9"/>
+                    <polygon points="700,130 670,155 700,155" fill="white" opacity="0.85"/>
+
+                    <!-- Trees (vintage style) -->
+                    {% for i in range(8) %}
+                    <g transform="translate({{ 30 + i*85 }}, 340)">
+                        <polygon points="0,-40 -15,0 15,0" fill="#1a5c3a" opacity="0.7"/>
+                        <polygon points="0,-60 -10,-10 10,-10" fill="#1a5c3a" opacity="0.8"/>
+                        <rect x="-3" y="0" width="6" height="12" fill="#6b4226" opacity="0.7"/>
+                    </g>
+                    {% endfor %}
+
+                    <!-- GREEN slopes -->
+                    <path class="slope-line slope-green" d="M 350,130 C 340,180 320,220 310,280 C 300,340 290,390 280,440"
+                          title="Green Run A" onclick="highlightSlope(this)">
+                        <title>Green Slope — Easy</title>
+                    </path>
+                    <path class="slope-line slope-green" d="M 160,195 C 175,240 180,290 185,340 C 190,370 195,410 195,440"
+                          onclick="highlightSlope(this)">
+                        <title>Green Slope — Beginner</title>
+                    </path>
+
+                    <!-- BLUE slopes -->
+                    <path class="slope-line slope-blue" d="M 350,130 C 370,170 380,210 390,260 C 400,310 405,370 410,440"
+                          onclick="highlightSlope(this)">
+                        <title>Blue Slope — Intermediate</title>
+                    </path>
+                    <path class="slope-line slope-blue" d="M 510,100 C 520,150 530,200 525,260 C 520,310 510,360 500,440"
+                          onclick="highlightSlope(this)">
+                        <title>Blue Slope — Intermediate</title>
+                    </path>
+
+                    <!-- RED slopes -->
+                    <path class="slope-line slope-red" d="M 500,80 C 480,130 465,175 455,230 C 445,280 440,350 435,440"
+                          onclick="highlightSlope(this)">
+                        <title>Red Slope — Advanced</title>
+                    </path>
+                    <path class="slope-line slope-red" d="M 300,100 C 290,130 275,170 265,220 C 255,270 248,340 240,440"
+                          onclick="highlightSlope(this)">
+                        <title>Red Slope — Advanced</title>
+                    </path>
+
+                    <!-- BLACK slopes -->
+                    <path class="slope-line slope-black" d="M 500,80 C 540,110 560,145 570,200 C 578,245 580,310 578,440"
+                          stroke-width="2.5" onclick="highlightSlope(this)">
+                        <title>Black Diamond — Expert Only</title>
+                    </path>
+
+                    <!-- Lift cables -->
+                    <line class="lift-cable" x1="170" y1="440" x2="310" y2="135"/>
+                    <line class="lift-cable" x1="400" y1="440" x2="498" y2="85"/>
+                    <line class="lift-cable" x1="490" y1="440" x2="695" y2="135"/>
+
+                    <!-- Animated gondola cabins on lift 1 -->
+                    <g class="cabin-a">
+                        <rect x="220" y="315" width="14" height="12" rx="2" fill="#c9a84c" stroke="white" stroke-width="1.5"/>
+                        <line x1="227" y1="315" x2="227" y2="310" stroke="#7f8c8d" stroke-width="1.5"/>
+                    </g>
+                    <g class="cabin-b">
+                        <rect x="265" y="250" width="14" height="12" rx="2" fill="#c9a84c" stroke="white" stroke-width="1.5"/>
+                        <line x1="272" y1="250" x2="272" y2="245" stroke="#7f8c8d" stroke-width="1.5"/>
+                    </g>
+
+                    <!-- Village markers -->
+                    <g transform="translate(200, 420)">
+                        <circle r="12" fill="var(--beige)" stroke="#1c3d5a" stroke-width="1.5"/>
+                        <text x="0" y="4" text-anchor="middle" font-size="10" fill="#1c3d5a">🏘</text>
+                    </g>
+                    <g transform="translate(430, 420)">
+                        <circle r="12" fill="var(--beige)" stroke="#1c3d5a" stroke-width="1.5"/>
+                        <text x="0" y="4" text-anchor="middle" font-size="10" fill="#1c3d5a">🏘</text>
+                    </g>
+
+                    <!-- Peak labels -->
+                    <text x="300" y="90" text-anchor="middle" font-size="11" fill="#1c3d5a" font-weight="bold" font-family="Georgia, serif">{{ resort.elevation_peak }}m</text>
+                    <text x="500" y="70" text-anchor="middle" font-size="11" fill="#1c3d5a" font-weight="bold" font-family="Georgia, serif">⛰</text>
+
+                    <!-- Legend -->
+                    <rect x="15" y="15" width="120" height="90" rx="6" fill="rgba(255,255,255,0.85)"/>
+                    <text x="25" y="32" font-size="9" font-weight="700" fill="#7a8a96" letter-spacing="1" font-family="sans-serif">LEGEND</text>
+                    <line x1="25" y1="42" x2="55" y2="42" stroke="#27ae60" stroke-width="3" stroke-linecap="round"/>
+                    <text x="62" y="46" font-size="9" fill="#2c2c2c" font-family="sans-serif">Easy</text>
+                    <line x1="25" y1="56" x2="55" y2="56" stroke="#2980b9" stroke-width="3" stroke-linecap="round"/>
+                    <text x="62" y="60" font-size="9" fill="#2c2c2c" font-family="sans-serif">Intermediate</text>
+                    <line x1="25" y1="70" x2="55" y2="70" stroke="#c0392b" stroke-width="3" stroke-linecap="round"/>
+                    <text x="62" y="74" font-size="9" fill="#2c2c2c" font-family="sans-serif">Advanced</text>
+                    <line x1="25" y1="84" x2="55" y2="84" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+                    <text x="62" y="88" font-size="9" fill="#2c2c2c" font-family="sans-serif">Expert</text>
+
+                    <!-- Resort name watermark -->
+                    <text x="350" y="435" text-anchor="middle" font-size="13" fill="rgba(28,61,90,0.3)" font-family="Georgia,serif" font-weight="bold" letter-spacing="4">{{ resort.name | upper }}</text>
+                </svg>
+
+                <!-- Slope tooltip -->
+                <div id="slope-tooltip" style="
+                    position:absolute; top:12px; right:12px;
+                    background:rgba(15,35,54,0.85);
+                    color:white; padding:10px 16px;
+                    border-radius: 8px; font-size:0.8rem;
+                    display:none; backdrop-filter:blur(6px);
+                ">Click a slope to highlight it</div>
+            </div>
+            <p style="font-size:0.78rem; color:var(--muted); margin-top:10px; text-align:center;">↑ Hover over slopes to preview them. Cabins animate on the lifts.</p>
+        </div>
+
+        <!-- Live Webcam -->
+        <div class="panel">
+            <div class="panel-subtitle">Mountain Eyes</div>
+            <div class="panel-title" style="margin-bottom:16px;">Live Webcam</div>
+            <div class="webcam-placeholder">
+                <div style="font-size:2rem;">📷</div>
+                <div>
+                    <div style="font-weight:600; margin-bottom:4px;">
+                        <span class="webcam-live-dot"></span> LIVE
+                    </div>
+                    <div style="font-size:0.85rem; opacity:0.7; margin-bottom:12px;">{{ resort.name }} Mountain Camera</div>
+                </div>
+                <a href="{{ resort.webcam }}" target="_blank" class="btn btn-ice" style="font-size:0.82rem;">
+                    <i class="fa fa-video"></i> Open Live Webcam
+                </a>
+            </div>
+        </div>
+
+        <!-- Compare Banner -->
+        <div class="compare-banner" style="margin-bottom:30px;">
+            <div>
+                <div style="font-weight:600; color:var(--deep);">Compare resorts</div>
+                <div>See how {{ resort.name }} stacks up against others</div>
+            </div>
+            <a href="/compare?ids={{ resort.id }}" class="btn btn-primary" style="font-size:0.82rem; white-space:nowrap;">
+                <i class="fa fa-scale-balanced"></i> Compare
+            </a>
+        </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN — Booking Sidebar -->
+    <div class="sidebar-sticky">
+
+        <!-- Hotels -->
+        <div class="panel">
+            <div class="panel-subtitle">Accommodation</div>
+            <div class="panel-title">Nearby Hotels</div>
+            {% for hotel in resort.hotels %}
+            <div class="hotel-card">
+                <div>
+                    <div class="hotel-name">{{ hotel.name }}</div>
+                    <div class="hotel-meta">
+                        ⭐ {{ hotel.rating }} &nbsp;·&nbsp; 🚡 {{ hotel.distance_lifts }} to lifts
+                    </div>
+                </div>
+                <div class="hotel-price">
+                    <div class="amt">€{{ hotel.price }}</div>
+                    <div class="night">/night</div>
+                    <button class="btn btn-primary" style="margin-top:6px; padding:6px 14px; font-size:0.75rem;"
+                            onclick="bookHotel('{{ hotel.name }}', {{ hotel.price }})">Book</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Ski Passes -->
+        <div class="panel">
+            <div class="panel-subtitle">Access the Mountain</div>
+            <div class="panel-title" style="margin-bottom:18px;">Ski Passes</div>
+            <div class="pass-grid">
+                <div class="pass-card" onclick="selectPass(this,'Day Pass')">
+                    <div class="pass-type">Day</div>
+                    <div class="pass-price">€{{ resort.ski_pass.day }}</div>
+                    <div class="pass-info">1 day access</div>
+                </div>
+                <div class="pass-card" onclick="selectPass(this,'3-Day Pass')" style="border-color:var(--glacier);">
+                    <div class="pass-badge">BEST VALUE</div>
+                    <div class="pass-type">3 Days</div>
+                    <div class="pass-price">€{{ resort.ski_pass.multiday_3 }}</div>
+                    <div class="pass-info">Save {{ ((resort.ski_pass.day * 3 - resort.ski_pass.multiday_3) / (resort.ski_pass.day * 3) * 100) | int }}%</div>
+                </div>
+                <div class="pass-card" onclick="selectPass(this,'Season Pass')">
+                    <div class="pass-type">Season</div>
+                    <div class="pass-price" style="font-size:1.4rem;">€{{ resort.ski_pass.season }}</div>
+                    <div class="pass-info">Full season</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:16px;" onclick="buyPass()">
+                <i class="fa fa-ticket"></i> Purchase Pass
+            </button>
+        </div>
+
+        <!-- Equipment Rental -->
+        <div class="panel">
+            <div class="panel-subtitle">Gear Up</div>
+            <div class="panel-title" style="margin-bottom:16px;">Rent Equipment</div>
+            <div class="equip-grid">
+                <div class="equip-item" onclick="toggleEquip(this)">
+                    <div class="equip-icon">⛷</div>
+                    <div><div class="equip-name">Skis</div><div class="equip-price">from €35/day</div></div>
+                </div>
+                <div class="equip-item" onclick="toggleEquip(this)">
+                    <div class="equip-icon">🏂</div>
+                    <div><div class="equip-name">Snowboard</div><div class="equip-price">from €38/day</div></div>
+                </div>
+                <div class="equip-item" onclick="toggleEquip(this)">
+                    <div class="equip-icon">👟</div>
+                    <div><div class="equip-name">Boots</div><div class="equip-price">from €22/day</div></div>
+                </div>
+                <div class="equip-item" onclick="toggleEquip(this)">
+                    <div class="equip-icon">⛑</div>
+                    <div><div class="equip-name">Helmet</div><div class="equip-price">from €12/day</div></div>
+                </div>
+                <div class="equip-item" onclick="toggleEquip(this)">
+                    <div class="equip-icon">🧥</div>
+                    <div><div class="equip-name">Jacket</div><div class="equip-price">from €28/day</div></div>
+                </div>
+                <div class="equip-item" onclick="toggleEquip(this)">
+                    <div class="equip-icon">🥽</div>
+                    <div><div class="equip-name">Goggles</div><div class="equip-price">from €8/day</div></div>
+                </div>
+            </div>
+            <div style="margin-top:16px;">
+                <label style="font-size:0.72rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted); font-weight:700; display:block; margin-bottom:8px;">Rental Duration</label>
+                <select id="rental-days" style="width:100%; padding:10px; border:1.5px solid var(--ice); border-radius:var(--radius); font-family:var(--font-body); background:var(--white);">
+                    <option>1 day</option><option>2 days</option><option>3 days</option>
+                    <option>5 days</option><option>1 week</option>
+                </select>
+            </div>
+            <button class="btn btn-gold" style="width:100%; justify-content:center; margin-top:14px;" onclick="reserveEquip()">
+                <i class="fa fa-bag-shopping"></i> Reserve Equipment
+            </button>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let selectedPass = null;
+
+    function highlightSlope(el) {
+        document.querySelectorAll('.slope-line').forEach(s => {
+            s.style.opacity = '0.3';
+            s.style.strokeWidth = '2';
+        });
+        el.style.opacity = '1';
+        el.style.strokeWidth = '8';
+        const tooltip = document.getElementById('slope-tooltip');
+        tooltip.textContent = el.querySelector('title') ? el.querySelector('title').textContent : 'Slope selected';
+        tooltip.style.display = 'block';
+        setTimeout(() => {
+            document.querySelectorAll('.slope-line').forEach(s => {
+                s.style.opacity = '';
+                s.style.strokeWidth = '';
+            });
+            tooltip.style.display = 'none';
+        }, 3000);
+    }
+
+    function selectPass(el, passType) {
+        document.querySelectorAll('.pass-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedPass = passType;
+    }
+
+    function buyPass() {
+        if (!selectedPass) { showToast('⚠️ Please select a pass type first'); return; }
+        fetch('/api/book', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ type: 'ski_pass', pass: selectedPass, resort: '{{ resort.name }}' })
+        })
+        .then(r => r.json())
+        .then(data => showToast('🎿 ' + data.message));
+    }
+
+    function bookHotel(name, price) {
+        fetch('/api/book', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ type: 'hotel', hotel: name, price: price, resort: '{{ resort.name }}' })
+        })
+        .then(r => r.json())
+        .then(data => showToast('🏨 ' + data.message));
+    }
+
+    function toggleEquip(el) {
+        el.classList.toggle('selected');
+    }
+
+    function reserveEquip() {
+        const selected = document.querySelectorAll('.equip-item.selected');
+        if (selected.length === 0) { showToast('⚠️ Select at least one item to rent'); return; }
+        const items = [...selected].map(e => e.querySelector('.equip-name').textContent).join(', ');
+        const days = document.getElementById('rental-days').value;
+        fetch('/api/book', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ type: 'equipment', items: items, duration: days, resort: '{{ resort.name }}' })
+        })
+        .then(r => r.json())
+        .then(data => showToast('🎿 ' + data.message));
+    }
+</script>
+{% endblock %}
